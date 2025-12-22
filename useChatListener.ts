@@ -1,31 +1,48 @@
 "use client";
-
+ 
 import { getEcho } from "@/lib/echo";
-import { useEffect } from "react"; 
+import {   useEffect, useState } from "react"; 
+
+ 
 
 export function useChatListener(
   chatId: number,
   onMessage: (message: any) => void
 ) {
+
+
+    const [token, setToken] = useState<string | null>(null);
+
+    
   useEffect(() => {
-    if (!chatId) return;
+    async function loadToken() {
+      const res = await fetch("/api/session");
+      const data = await res.json();
+      console.log(data);
+      
+      setToken(data.accessToken);
+    }
+    loadToken();
+  }, []);
+
+
+
+  useEffect(() => {
+    if (!chatId || !token) return;
 
     let channel: any;
 
-    ( () => {
-      const echo =  getEcho();
+    const echo = getEcho(token);
 
-      channel = echo.private(`chat.${chatId}`);
+    channel = echo.private(`chat.${chatId}`);
 
-      channel.listen("MessageSent", (e: any) => {
-        onMessage(e.message);
-      });
-    })();
+    channel.listen(".MessageSent", (e: any) => {
+      onMessage(e.message);
+    });
 
     return () => {
-      if (channel) {
-        channel.stopListening("MessageSent");
-      }
+      channel.stopListening(".MessageSent");
+      echo.leave(`private-chat.${chatId}`);
     };
-  }, [chatId, onMessage]);
+  }, [chatId, token , onMessage]);
 }

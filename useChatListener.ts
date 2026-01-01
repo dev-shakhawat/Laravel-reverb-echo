@@ -1,4 +1,3 @@
-// lib/hooks/useChatListener.ts
 "use client";
 
 import { getEcho } from "@/lib/echo";
@@ -42,8 +41,8 @@ export function useChatListener(
       channel = echoInstance.private(channelName);
       console.log(`🔌 Listening to channel: ${channelName}`); // Debug log
 
-      channel.listen(".MessageSent", (e: { message: Message }) => {
-        console.log("📨 New message received:", e.message); // Debug log
+      channel.listen("MessageSent", (e: { message: Message }) => {
+        console.log("📨 New message received:", e); // Debug log
         onMessageRef.current(e.message);
       });
     })();
@@ -52,7 +51,7 @@ export function useChatListener(
       mounted = false;
       console.log(`🔌 Disconnecting from channel: ${channelName}`); // Debug log
       try {
-        channel?.stopListening(".MessageSent");
+        channel?.stopListening("MessageSent");
         echoInstance?.leave(`private-${channelName}`);
       } catch (err) {
         // ignore cleanup errors

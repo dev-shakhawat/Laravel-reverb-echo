@@ -8,7 +8,7 @@ declare global {
 let echo: any = null;
 
 export async function getEcho(token?: string) {
-  if (!token) return null;
+  if (!token) return null; 
 
   if (!echo && typeof window !== "undefined") {
     const [{ default: Echo }, { default: Pusher }] = await Promise.all([

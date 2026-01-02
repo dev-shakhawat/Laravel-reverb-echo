@@ -25,10 +25,8 @@ export function useChatListener(
   }, []);
 
   useEffect(() => {
-    if (!chatId || chatId === 0 || !token) {
-      console.log("Skipping listener setup:", { chatId, hasToken: !!token });
-      return;
-    }
+    // Add this check
+    if (!chatId || chatId === 0 || !token) return;
 
     let mounted = true;
     let channel: any = null;
@@ -36,50 +34,27 @@ export function useChatListener(
     const channelName = `chat.${chatId}`;
 
     (async () => {
-      try {
-        const e = await getEcho(token);
-        if (!e || !mounted) {
-          console.log("Echo not available or component unmounted");
-          return;
-        }
-        echoInstance = e;
+      const e = await getEcho(token);
+      if (!e || !mounted) return;
+      echoInstance = e;
 
-        channel = echoInstance.private(channelName);
-        console.log(`🔌 Subscribing to channel: ${channelName}`);
+      channel = echoInstance.private(channelName);
+      console.log(`Listening to channel: ${channelName}`); 
 
-        // Add subscription success/error handlers
-        channel
-          .subscribed(() => {
-            console.log(`Successfully subscribed to: ${channelName}`);
-          })
-          .error((error: any) => {
-            console.error(`Subscription error for ${channelName}:`, error);
-          });
-
-        // Listen for the event
-        channel.listen("MessageSent", (e: { message: Message }) => {
-          console.log("New message received:", e);
-          if (mounted) {
-            onMessageRef.current(e.message);
-          }
-        });
-      } catch (error) {
-        console.error("Error setting up echo listener:", error);
-      }
+      channel.listen("MessageSent", (e: Message) => {
+        console.log("New event received:", e); 
+        onMessageRef.current(e);
+      });
     })();
 
     return () => {
       mounted = false;
-      console.log(`Cleaning up channel: ${channelName}`);
+      console.log(`Disconnecting from channel: ${channelName}`); 
       try {
-        if (channel) {
-          channel.stopListening("MessageSent");
-        }
-        if (echoInstance) {
-          echoInstance.leave(`private-${channelName}`);
-        }
+        channel?.stopListening("MessageSent");
+        echoInstance?.leave(`private-${channelName}`);
       } catch (err) {
-        console.error("Error during cleanup:", err);
+        // ignore cleanup errors
       }
     };
   }, [chatId, token]);
